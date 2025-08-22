@@ -33,8 +33,13 @@ new class extends Component
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
         <link rel="icon" type="image/x-icon" href="{{asset('assets/img/favicon.png')}}" />
 
-        <link href="{{ asset('css/styles.css') }}" rel="stylesheet">
-        <script src="{{ asset('js/scripts.js') }}"></script>
+        @vite([
+            'resources/css/styles.css',
+            'resources/js/app.js',
+            'resources/js/scripts.js',
+       ])
+        <!-- <link href="{{ asset('css/styles.css') }}" rel="stylesheet">
+        <script src="{{ asset('js/scripts.js') }}"></script> -->
         <script data-search-pseudo-elements defer src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/js/all.min.js" crossorigin="anonymous"></script>
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -44,7 +49,6 @@ new class extends Component
         <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
         {{-- <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script> --}}
         <link rel="stylesheet" href="{{asset('packages/select2/dist/css/select2.css')}}">
-        @vite(['resources/js/app.js'])
         @livewireStyles
     </head>
     <body class="font-sans antialiased nav-fixed">

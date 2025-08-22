@@ -1,56 +1,22 @@
-version: '3.8'
-
 services:
-    app:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        working_dir: /var/www
-        ports:
-            - "8081:80"
-        volumes:
-            - .:/var/www
-        depends_on:
-            - db
-        environment:
-            DB_HOST: db
-            DB_PORT: 3306
-            DB_DATABASE: sejawat_new
-            DB_USERNAME: root
-            DB_PASSWORD: qwerty
+  app:
+    build:
+      context: .
+      dockerfile: prod.Dockerfile
+    ports: ["8081:8080"]
+    depends_on: [db]
+    env_file: .env
 
-    db:
-        image: mysql:8.0
-        restart: always
-        environment:
-            MYSQL_DATABASE: ${DB_DATABASE}
-            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-            MYSQL_PASSWORD: ${DB_PASSWORD}
-        ports:
-            - "3307:3306"
-        volumes:
-            - dbdata:/var/lib/mysql
-
-    node:
-        #build:
-         #   context: .
-          #  dockerfile: node.Dockerfile
-        #container_name: npm
-        #restart: always
-        #volumes:
-        #    - ./src:/var/www
-        #ports:
-        #    - "3001:3000"
-        #working_dir: /var/www
-        #entrypoint: ['npm']
-
-        image: node:lts-alpine
-        volumes:
-            - .:/var/www/html
-        working_dir: /var/www/html
-        ports:
-            - "5173:5173" # Default Vite dev server port
-        command: npm run dev # Or 'yarn dev'
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-sejawat_new}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-qwery}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-qwery}
+      MYSQL_USER: ${DB_USERNAME:-root}
+    ports: ["3306:3306"]
+    volumes: [dbdata:/var/lib/mysql]
 
 volumes:
-    dbdata:
+  dbdata:
