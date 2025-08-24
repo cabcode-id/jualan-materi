@@ -12,7 +12,7 @@ new class extends Component
 {
     // Add active_status property
     public bool $active_status = false;
-    
+
     // Existing properties...
     public string $name = '';
     public string $email = '';
@@ -32,7 +32,7 @@ new class extends Component
     public bool $nameModified = false;
     public bool $phoneModified = false;
 
-    public function with(): array 
+    public function with(): array
     {
         return [
             'userId' => request()->route('userId'),
@@ -43,10 +43,10 @@ new class extends Component
     {
         $userId = request()->route('userId');
         $this->editUser = User::findOrFail($userId);
-        
+
         // Add active_status initialization
         $this->active_status = $this->editUser->active_status;
-        
+
         // Existing initializations...
         $this->name = $this->editUser->name;
         $this->email = $this->editUser->email;
@@ -55,9 +55,13 @@ new class extends Component
         if (!str_starts_with($this->phone_number, '+62')) {
             $this->phone_number = '+62' . $this->phone_number;
         }
+        if(isset($this->editUser->universitas_id)){
+            $this->universitas_id = $this->editUser->universitas_id;
+            $this->universitas_name = $this->editUser->universitas->universitas_name;
+        }
+
         $this->universitas_list = RefUniversitasList::all();
-        $this->universitas_id = $this->editUser->universitas_id;
-        $this->universitas_name = $this->editUser->universitas->universitas_name;
+
         $this->joined_date = $this->editUser->created_at->format('d F Y');
         $this->role = $this->editUser->role;
         $this->available_roles = User::roles();
@@ -72,7 +76,7 @@ new class extends Component
         $this->active_status = $this->editUser->active_status;
 
         $status = $this->active_status ? 'diaktifkan' : 'dinonaktifkan';
-        
+
         $this->dispatch('swal:modal', [
             'type' => 'success',
             'title' => 'Berhasil!',
@@ -100,7 +104,7 @@ new class extends Component
    protected function validatePhoneNumber()
    {
        $this->phoneError = null;
-       
+
        if (!str_starts_with($this->phone_number, '+62')) {
            $this->phone_number = '+62' . substr($this->phone_number, 3);
        }
@@ -119,7 +123,7 @@ new class extends Component
        $existingUser = User::where('phone_number', $this->phone_number)
            ->where('id', '!=', $this->editUser->id)
            ->first();
-           
+
        if ($existingUser) {
            $this->isPhoneValid = false;
            $this->phoneError = 'Nomor telepon sudah digunakan';
@@ -136,8 +140,8 @@ new class extends Component
            'universitas_id' => ['required', 'exists:ref_universitas_list,id'],
            'role' => ['required', Rule::in(User::roles())],
            'phone_number' => [
-               'required', 
-               'string', 
+               'required',
+               'string',
                'max:20',
                'regex:/^\+62\d+$/',
                Rule::unique('users', 'phone_number')->ignore($this->editUser->id)
@@ -157,7 +161,7 @@ new class extends Component
            'text' => 'Profil berhasil diperbarui.',
        ]);
    }
-}; 
+};
 
 ?>
 
@@ -170,11 +174,11 @@ new class extends Component
                 <div class="card mb-4 mb-xl-0">
                     <div class="card-header">Foto Profil</div>
                     <div class="card-body text-center">
-                        <img id="avatar-image" class="img-account-profile rounded-circle mb-2" 
-                            src="{{ asset('assets/img/avatar/' . $editUser->avatar) }}" 
-                            alt="{{ $editUser->name }}" 
+                        <img id="avatar-image" class="img-account-profile rounded-circle mb-2"
+                            src="{{ asset('assets/img/avatar/' . $editUser->avatar) }}"
+                            alt="{{ $editUser->name }}"
                             style="width: 150px; height: 150px; overflow: hidden; position: relative; justify-content: center; align-items: center;" />
-                        
+
                         <div class="small font-italic text-muted mb-4">JPG atau PNG tidak lebih dari 1 MB</div>
                         <form id="avatar-form" method="POST" enctype="multipart/form-data" action="{{ route('profile.updateAvatar') }}">
                             @csrf
@@ -195,7 +199,7 @@ new class extends Component
                             <span>Detail Akun</span>
                             @if($role === 'admin')
                                 <span class="badge bg-danger ms-2">Administrator</span>
-                            @elseif($role === 'tutor') 
+                            @elseif($role === 'tutor')
                                 <span class="badge bg-purple ms-2">Tutor</span>
                             @elseif($role === 'user')
                                 <span class="badge bg-blue ms-2">User</span>
@@ -204,20 +208,20 @@ new class extends Component
                                 {{ $active_status ? 'Aktif' : 'Tidak Aktif' }}
                             </span>
                         </div>
-                        
+
                      </div>
                     <div class="card-body">
                         <form id="profile-form" wire:submit.prevent="updateProfileInformation">
                             <!-- Name -->
                             <div class="mb-3">
                                 <label class="small mb-1" for="name">Nama</label>
-                                <input 
-                                    wire:model.live="name" 
+                                <input
+                                    wire:model.live="name"
                                     class="form-control {{ $nameModified ? ($isNameValid ? 'is-valid' : 'is-invalid') : '' }}"
-                                    id="name" 
-                                    type="text" 
+                                    id="name"
+                                    type="text"
                                     maxlength="19"
-                                    placeholder="Masukkan nama anda" 
+                                    placeholder="Masukkan nama anda"
                                 />
                                 <x-input-error :messages="$errors->get('name')" class="mt-2 text-danger" />
                             </div>
@@ -226,22 +230,22 @@ new class extends Component
                             <div class="row gx-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="username">Username</label>
-                                    <input 
-                                        disabled 
-                                        class="form-control" 
-                                        id="username" 
-                                        type="text" 
-                                        wire:model="username" 
+                                    <input
+                                        disabled
+                                        class="form-control"
+                                        id="username"
+                                        type="text"
+                                        wire:model="username"
                                     />
                                 </div>
-                                
+
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="phone_number">No Telpon</label>
-                                    <input 
-                                        wire:model.live="phone_number" 
+                                    <input
+                                        wire:model.live="phone_number"
                                         class="form-control {{ $phoneModified ? ($isPhoneValid ? 'is-valid' : 'is-invalid') : '' }}"
-                                        id="phone_number" 
-                                        type="tel" 
+                                        id="phone_number"
+                                        type="tel"
                                         maxlength="20"
                                         placeholder="+62"
                                     />
@@ -256,21 +260,21 @@ new class extends Component
                             <div class="row gx-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="email">Email</label>
-                                    <input 
-                                        disabled 
-                                        class="form-control" 
-                                        id="email" 
-                                        type="email" 
-                                        wire:model="email" 
+                                    <input
+                                        disabled
+                                        class="form-control"
+                                        id="email"
+                                        type="email"
+                                        wire:model="email"
                                     />
                                 </div>
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="joined_date">Tanggal Bergabung</label>
-                                    <input 
-                                        disabled 
-                                        class="form-control bg-light" 
-                                        id="joined_date" 
-                                        type="text" 
+                                    <input
+                                        disabled
+                                        class="form-control bg-light"
+                                        id="joined_date"
+                                        type="text"
                                         wire:model="joined_date"
                                     />
                                 </div>
@@ -281,9 +285,9 @@ new class extends Component
                                 @if(!$isAdmin && $role !== 'tutor')
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="universitas">Universitas</label>
-                                    <select 
-                                        class="form-control" 
-                                        id="universitas" 
+                                    <select
+                                        class="form-control"
+                                        id="universitas"
                                         wire:model="universitas_id"
                                         @disabled($isAdmin || $role === 'tutor')>
                                         <option value="" disabled>Pilih Universitas</option>
@@ -298,9 +302,9 @@ new class extends Component
                                 @endif
                                 <div class="col-md-{{ (!$isAdmin && $role !== 'tutor') ? '6' : '12' }}">
                                     <label class="small mb-1" for="role">Role</label>
-                                    <select 
-                                        class="form-control" 
-                                        id="role" 
+                                    <select
+                                        class="form-control"
+                                        id="role"
                                         wire:model="role"
                                         @disabled($isAdmin)>
                                         <option value="" disabled>Pilih Peran</option>
@@ -410,7 +414,7 @@ new class extends Component
     // Handle modals
     const updateProfileModal = document.getElementById('updateProfileModal');
     const updateAvatarModal = document.getElementById('updateAvatarModal');
-    
+
     // For profile update
     updateProfileModal.addEventListener('shown.bs.modal', function() {
         updateProfileModal.querySelector('.btn-primary').focus();
@@ -434,7 +438,7 @@ new class extends Component
     const avatarForm = document.getElementById('avatar-form');
     avatarForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         fetch(this.action, {
             method: 'POST',
             body: new FormData(this)
@@ -470,7 +474,7 @@ new class extends Component
     // Single submit handler for avatar form
     avatarForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         fetch(this.action, {
             method: 'POST',
             body: new FormData(this),
@@ -501,7 +505,7 @@ new class extends Component
             // Reload the image with cache-busting
             const timestamp = new Date().getTime();
             avatarImage.src = avatarImage.src.split('?')[0] + '?t=' + timestamp;
-            
+
             // Reset form
             avatarForm.reset();
             avatarButton.disabled = true;

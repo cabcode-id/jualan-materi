@@ -34,7 +34,7 @@ new #[Layout('layouts.app')] class extends Component {
             'phone_number' => ['required', 'string', 'regex:/^\+62[0-9]{8,12}$/'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
-            'universitas_id' => ['required', 'exists:ref_universitas_list,id'],
+            'universitas_id' => ['required_if:role,user'],
             'role' => ['required', 'string'],
         ];
     }
@@ -62,7 +62,7 @@ new #[Layout('layouts.app')] class extends Component {
     private function validateUsername()
     {
         $this->usernameError = null;
-        
+
         if (strlen($this->username) > 13) {
             $this->isUsernameValid = false;
             $this->usernameError = 'Username tidak boleh lebih dari 13 karakter';
@@ -86,7 +86,7 @@ new #[Layout('layouts.app')] class extends Component {
     private function validateEmail()
     {
         $this->emailError = null;
-        
+
         if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
             $this->isEmailValid = false;
             $this->emailError = 'Format email tidak valid';
@@ -105,7 +105,7 @@ new #[Layout('layouts.app')] class extends Component {
     private function validatePhoneNumber()
     {
         $this->phoneError = null;
-        
+
         if (!str_starts_with($this->phone_number, '+62')) {
             if (str_starts_with($this->phone_number, '0')) {
                 $this->phone_number = '+62' . substr($this->phone_number, 1);
@@ -115,17 +115,24 @@ new #[Layout('layouts.app')] class extends Component {
                 $this->phone_number = '+62' . $this->phone_number;
             }
         }
-        
+
         $digits = substr($this->phone_number, 3);
         if (strlen($digits) < 8) {
             $this->isPhoneValid = false;
             $this->phoneError = 'Nomor telepon terlalu pendek';
             return;
         }
-        
+
         if (strlen($digits) > 12) {
             $this->isPhoneValid = false;
             $this->phoneError = 'Nomor telepon terlalu panjang';
+            return;
+        }
+
+
+        if(User::where('phone_number', $this->phone_number)->exists()){
+            $this->isPhoneValid = false;
+            $this->phoneError = 'Nomor telepon sudah digunakan';
             return;
         }
 
@@ -148,7 +155,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function save()
     {
         $validated = $this->validate();
-        
+
         try {
             $user = User::create([
                 'name' => $validated['name'],
@@ -156,7 +163,7 @@ new #[Layout('layouts.app')] class extends Component {
                 'email' => strtolower($validated['email']),
                 'phone_number' => $validated['phone_number'],
                 'password' => Hash::make($validated['password']),
-                'universitas_id' => $validated['universitas_id'],
+                'universitas_id' => $validated['universitas_id'] ?? null,
                 'role' => $validated['role'],
                 'referral_code' => $this->generateReferralCode(),
                 'active_status' => true
@@ -168,9 +175,9 @@ new #[Layout('layouts.app')] class extends Component {
                 'message' => "User berhasil ditambahkan!"
             ]);
             return redirect()->route('admin.users');
-            
+
         } catch (\Exception $e) {
-            $this->dispatch('error', 'Terjadi kesalahan saat menambahkan user.');
+            $this->dispatch('error', 'Terjadi kesalahan saat menambahkan user.' . $e->getMessage());
         }
     }
 
@@ -197,9 +204,9 @@ new #[Layout('layouts.app')] class extends Component {
                             <!-- Name -->
                             <div class="mb-3">
                                 <label class="small mb-1" for="name">Nama</label>
-                                <input wire:model.live="name" 
-                                    class="form-control {{ strlen($name) > 0 ? ($isNameValid ? 'is-valid' : 'is-invalid') : '' }}" 
-                                    type="text" 
+                                <input wire:model.live="name"
+                                    class="form-control {{ strlen($name) > 0 ? ($isNameValid ? 'is-valid' : 'is-invalid') : '' }}"
+                                    type="text"
                                     maxlength="19"
                                     placeholder="Masukkan nama" />
                                 @error('name') <span class="text-danger small">{{ $message }}</span> @enderror
@@ -209,9 +216,9 @@ new #[Layout('layouts.app')] class extends Component {
                             <div class="row gx-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="username">Username</label>
-                                    <input wire:model.live.debounce.500ms="username" 
-                                        class="form-control @if($username) {{ $isUsernameValid ? 'is-valid' : 'is-invalid' }} @endif" 
-                                        type="text" 
+                                    <input wire:model.live.debounce.500ms="username"
+                                        class="form-control @if($username) {{ $isUsernameValid ? 'is-valid' : 'is-invalid' }} @endif"
+                                        type="text"
                                         maxlength="13"
                                         placeholder="Masukkan username" />
                                     @if($usernameError)
@@ -221,9 +228,9 @@ new #[Layout('layouts.app')] class extends Component {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="email">Email</label>
-                                    <input wire:model.live.debounce.500ms="email" 
-                                        class="form-control @if($email) {{ $isEmailValid ? 'is-valid' : 'is-invalid' }} @endif" 
-                                        type="email" 
+                                    <input wire:model.live.debounce.500ms="email"
+                                        class="form-control @if($email) {{ $isEmailValid ? 'is-valid' : 'is-invalid' }} @endif"
+                                        type="email"
                                         placeholder="Masukkan email" />
                                     @if($emailError)
                                         <div class="small text-danger">{{ $emailError }}</div>
@@ -236,9 +243,9 @@ new #[Layout('layouts.app')] class extends Component {
                             <div class="row gx-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="phone_number">No Telp</label>
-                                    <input wire:model.live="phone_number" 
-                                        class="form-control @if($phone_number != '+62') {{ $isPhoneValid ? 'is-valid' : 'is-invalid' }} @endif" 
-                                        type="tel" 
+                                    <input wire:model.live="phone_number"
+                                        class="form-control @if($phone_number != '+62') {{ $isPhoneValid ? 'is-valid' : 'is-invalid' }} @endif"
+                                        type="tel"
                                         placeholder="+62" />
                                     @if($phoneError)
                                         <div class="small text-danger">{{ $phoneError }}</div>
@@ -261,17 +268,17 @@ new #[Layout('layouts.app')] class extends Component {
                             <div class="row gx-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="password">Password</label>
-                                    <input wire:model="password" 
-                                        class="form-control" 
-                                        type="password" 
+                                    <input wire:model="password"
+                                        class="form-control"
+                                        type="password"
                                         placeholder="Masukkan password" />
                                     @error('password') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="small mb-1" for="password_confirmation">Konfirmasi Password</label>
-                                    <input wire:model="password_confirmation" 
-                                        class="form-control" 
-                                        type="password" 
+                                    <input wire:model="password_confirmation"
+                                        class="form-control"
+                                        type="password"
                                         placeholder="Konfirmasi password" />
                                 </div>
                             </div>
